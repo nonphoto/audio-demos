@@ -11,6 +11,7 @@ def callback(in_data, frame_count, time_info, status):
 	global current_frame
 	factor = float(PITCH) * (numpy.pi * 2) / RATE
 	chunk = numpy.sin((current_frame + numpy.arange(frame_count)) * factor)
+	print chunk
 	current_frame += frame_count
 	out_data = chunk.astype(numpy.float32).tostring()
 	return (out_data, pyaudio.paContinue)

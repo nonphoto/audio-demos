@@ -14,6 +14,7 @@ pattern = midi.read_midifile(midifile)
 track = iter(pattern[2])
 
 current_frame = 0
+current_tick = 0
 next_event = track.next()
 notes = [False] * 128
 
@@ -23,26 +24,28 @@ TICK_RATE = float(TEMPO * RESOLUTION) / 60
 FRAME_RATE = 44100
 
 def tickToFrame(tick):
-	return int(float(tick) / TICK_RATE * FRAME_RATE)
+	return float(tick) / TICK_RATE * FRAME_RATE
+
+def noteToPitch(note):
+	return (2 ** (float(note - 69) / 12)) * 440
 
 def osc(pitch, frame):
-	t = frame / FRAME_RATE
-	return numpy.sin(t * pitch * numpi.pi * 2)
+	t = float(frame) / FRAME_RATE
+	return numpy.sin(t * pitch * numpy.pi * 2)
 
 def synthesize(frame):
 	global notes
 	global next_event
+	global current_tick
 
-	print frame
-	print tickToFrame(next_event.tick)
-
-	while frame >= tickToFrame(next_event.tick):
-		if type(next_event) is midi.NoteEvent:
+	while frame >= tickToFrame(current_tick + next_event.tick):
+		if type(next_event) is midi.NoteOnEvent:
 			notes[next_event.get_pitch()] = (type(next_event) is midi.NoteOnEvent)
 
+		current_tick += next_event.tick
 		next_event = track.next()
 
-	amp = [osc(*note) for note in enumerate(notes) if note[1]]
+	amp = [osc(noteToPitch(note[0]), frame) for note in enumerate(notes) if note[1]]
 
 	if amp:
 		return numpy.mean(amp)
@@ -52,9 +55,6 @@ def synthesize(frame):
 def callback(in_data, frame_count, time_info, status):
 	global current_frame
 	global next_event
-	global notes
-
-	active_notes = [note for note in enumerate(notes) if note[1]]
 
 	frames = range(current_frame, current_frame + frame_count)
 	chunk = numpy.array([synthesize(frame) for frame in frames])
