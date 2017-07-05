@@ -1,31 +1,39 @@
-s.boot;
-s.reboot;
+~notes = Array.newClear(128);
 
 (
 SynthDef(\sin, {
-	arg amp = 0.01, pitch = 440, trig = True;
-	var env, sig;
-	env = EnvGen.kr(Env.asr(1.0, 0.9, 1.0), trig, doneAction: 0);
+	arg amp = 0.1, pitch = 440, gate = 1;
+	var env, sig, out;
+	env = EnvGen.kr(Env.adsr, gate, doneAction: 2);
 	sig = SinOsc.ar(pitch, 0.0, amp) * env;
-	Out.ar([0], sig * 0.6);
+	Out.ar(0, sig!2);
 }).add;
 )
 
-h = Synth(\sin, [\amp, 0.4]);
+x = Synth.new(\sin, [\amp, 0.5]);
+x.free;
 
 (
-x = OSCFunc({
+OSCFunc({
 	arg msg, time, addr, port;
-	var pitch, trig;
+	var noteIndex;
+	msg.postln;
+	noteIndex = msg[1].asInt;
+	~notes[noteIndex] = Synth.new(\sin, [\pitch, noteIndex.midicps, \gate, 1]);
+}, "/noteOn");
 
-	pitch = msg[1].asFloat;
-	trig = msg[2].asBoolean;
-
-	h.set(\pitch, pitch);
-	h.set(\trig, trig);
-}, '/event', NetAddr("127.0.0.1", NetAddr.langPort));
+OSCFunc({
+	arg msg, time, addr, port;
+	var noteIndex;
+	msg.postln;
+	noteIndex = msg[1].asInt;
+	~notes[noteIndex].set(\gate, 0);
+	~notes[noteIndex] = nil;
+}, "/noteOff");
 )
 
 m = NetAddr("127.0.0.1", NetAddr.langPort)
-m.sendMsg("/event", 440, 1);
-m.sendMsg("/event", 440, 0);
+m.sendMsg("/noteOn", 60);
+m.sendMsg("/noteOff", 60);
+m.sendMsg("/noteOn", 69);
+m.sendMsg("/noteOff", 69);
