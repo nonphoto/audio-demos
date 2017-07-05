@@ -18,12 +18,14 @@ x = OSCFunc({
 	arg msg, time, addr, port;
 	var pitch, trig;
 
+	msg.postln;
+
 	pitch = msg[1].asFloat;
 	trig = msg[2].asBoolean;
 
 	h.set(\pitch, pitch);
 	h.set(\trig, trig);
-}, '/event', NetAddr("127.0.0.1", NetAddr.langPort));
+}, '/event');
 )
 
 m = NetAddr("127.0.0.1", NetAddr.langPort)

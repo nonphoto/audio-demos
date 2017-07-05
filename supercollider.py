@@ -3,11 +3,12 @@ import time
 import random
 
 client = OSC.OSCClient()
-client.connect(('127.0.0.1', 57110))
+client.connect(('127.0.0.1', 57120))
 
 firstMessage = OSC.OSCMessage()
 firstMessage.setAddress("/event")
-firstMessage.append(220)
+firstMessage.append(440)
+firstMessage.append(1)
 client.send(firstMessage)
 
 time.sleep(2)
